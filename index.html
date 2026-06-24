@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clasificación Inteligente de la Maduración de los Mangos</title>
+  <meta name="description" content="Feria científica: clasificación de la maduración de mangos mediante Inteligencia Artificial, TensorFlow.js y Teachable Machine." />
+
+  <!-- Tipografías: Fraunces (display), Plus Jakarta Sans (cuerpo), JetBrains Mono (datos / lecturas IA) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Chart.js para gráficos interactivos de la sección Resultados -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ============ NAVBAR FIJA ============ -->
+  <header class="navbar" id="navbar">
+    <div class="navbar__inner">
+      <a href="#inicio" class="navbar__brand">
+        <span class="navbar__mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="30" height="30">
+            <path d="M6 26c0-11 9-20 20-20 4 0 6 2 6 2s2 6-2 14-12 14-18 14C8 36 6 31 6 26Z" fill="url(#navGrad)"/>
+            <defs>
+              <linearGradient id="navGrad" x1="6" y1="6" x2="32" y2="36">
+                <stop offset="0" stop-color="#4CAF50"/>
+                <stop offset="0.5" stop-color="#FFC727"/>
+                <stop offset="1" stop-color="#FF8A3D"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        <span class="navbar__title">Mango<strong>IA</strong></span>
+      </a>
+
+      <nav class="navbar__links" id="navLinks">
+        <a href="#inicio">Inicio</a>
+        <a href="#detector">Detector IA</a>
+        <a href="#resultados">Resultados</a>
+        <a href="#galeria">Galería</a>
+        <a href="#creditos">Créditos</a>
+      </nav>
+
+      <div class="navbar__actions">
+        <button id="themeToggle" class="icon-btn" title="Cambiar modo oscuro/claro" aria-label="Cambiar tema">
+          <svg id="iconSun" viewBox="0 0 24 24" width="20" height="20"><path d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5 5 3.6 3.6M18.4 18.4 19.8 19.8M5 19l-1.4 1.4M18.4 5.6 19.8 4.2M12 8a4 4 0 100 8 4 4 0 000-8Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+          <svg id="iconMoon" viewBox="0 0 24 24" width="20" height="20" style="display:none"><path d="M21 12.8A9 9 0 1111.2 3 7.2 7.2 0 0021 12.8Z" fill="currentColor"/></svg>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ 1. INICIO ============ -->
+  <section class="hero" id="inicio">
+    <div class="hero__bg" aria-hidden="true"></div>
+    <div class="hero__inner">
+      <div class="hero__text fade-up">
+        <p class="eyebrow">Feria Científica · Inteligencia Artificial Aplicada</p>
+        <h1 class="hero__title">
+          Clasificación Inteligente de la
+          <span class="grad-text">Maduración de los Mangos</span>
+        </h1>
+        <p class="hero__subtitle">
+          Un sistema de visión por computadora que observa un mango —por cámara o fotografía—
+          y determina en segundos su punto de maduración: <strong>verde, maduro, sobremaduro o en mal estado</strong>,
+          usando una red neuronal entrenada con Google Teachable Machine y ejecutada con TensorFlow.js.
+        </p>
+        <div class="hero__cta">
+          <a href="scanner.html" class="btn btn--primary">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 7a2 2 0 0 1 2-2h2l1-2h6l1 2h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            Escanear Mango
+          </a>
+          <a href="#detector" class="btn btn--ghost">Cómo funciona</a>
+        </div>
+
+        <div class="hero__scale" aria-hidden="true">
+          <span>Verde</span><span>Maduro</span><span>Sobremaduro</span><span>Malo</span>
+        </div>
+      </div>
+
+      <div class="hero__art fade-up" style="animation-delay:.15s">
+        <!-- Ilustración SVG propia: rodajas de mango representando el espectro de maduración -->
+        <svg viewBox="0 0 420 420" class="mango-illustration" role="img" aria-label="Ilustración de mangos en distintos estados de maduración">
+          <defs>
+            <radialGradient id="gMango" cx="35%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#FFE9A8"/>
+              <stop offset="45%" stop-color="#FFC727"/>
+              <stop offset="100%" stop-color="#FF8A3D"/>
+            </radialGradient>
+            <linearGradient id="gLeaf" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#7BC67E"/>
+              <stop offset="100%" stop-color="#1B5E3F"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="210" cy="370" rx="150" ry="18" fill="#000" opacity="0.08"/>
+          <g class="mango-leaf">
+            <path d="M205 70c-10-35 10-55 40-58-6 28-14 46-40 58Z" fill="url(#gLeaf)"/>
+          </g>
+          <path class="mango-body" d="M120 150c0-55 45-95 95-95s90 35 95 90c8 70-25 150-95 175-65-23-103-100-95-170Z" fill="url(#gMango)"/>
+          <path d="M150 130c30-40 95-45 130 5" stroke="#C2410C" stroke-width="3" fill="none" opacity="0.35" stroke-linecap="round"/>
+          <g class="mango-spots" fill="#7A2E12" opacity="0.18">
+            <circle cx="170" cy="170" r="3"/>
+            <circle cx="255" cy="190" r="2.4"/>
+            <circle cx="200" cy="260" r="2.8"/>
+            <circle cx="240" cy="300" r="2.2"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <a href="#detector" class="scroll-cue" aria-label="Bajar a la siguiente sección">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </a>
+  </section>
+
+  <!-- ============ 2. DETECTOR CON IA ============ -->
+  <section class="section section--detector" id="detector">
+    <div class="section__head fade-up">
+      <p class="eyebrow">02 · Laboratorio</p>
+      <h2>Detector con Inteligencia Artificial</h2>
+      <p class="section__lead">
+        Nuestro modelo fue entrenado con cientos de fotografías reales de mangos en cuatro estados de maduración.
+        Analiza el color de la cáscara, sus manchas y tonalidades para predecir el estado del fruto y su sabor:
+        <strong>ácido</strong> (verde), <strong>agridulce</strong> (maduro), <strong>dulce</strong> (sobremaduro)
+        o, si el fruto está deteriorado, <strong>en mal estado</strong>.
+      </p>
+    </div>
+
+    <div class="detector-grid">
+      <div class="detector-card fade-up">
+        <div class="detector-card__icon">📷</div>
+        <h3>Cámara en vivo</h3>
+        <p>Activa la cámara web y el modelo analiza el mango en tiempo real, actualizando la predicción fotograma a fotograma.</p>
+      </div>
+      <div class="detector-card fade-up" style="animation-delay:.1s">
+        <div class="detector-card__icon">🖼️</div>
+        <h3>Subida de imagen</h3>
+        <p>¿No tienes cámara a la mano? Sube una fotografía del mango y obtén el mismo análisis al instante.</p>
+      </div>
+      <div class="detector-card fade-up" style="animation-delay:.2s">
+        <div class="detector-card__icon">📊</div>
+        <h3>Confianza y barras</h3>
+        <p>Visualiza el porcentaje de confianza de cada clase con barras de probabilidad animadas.</p>
+      </div>
+      <div class="detector-card fade-up" style="animation-delay:.3s">
+        <div class="detector-card__icon">🍽️</div>
+        <h3>Recetas sugeridas</h3>
+        <p>Según el sabor detectado, el sistema recomienda recetas ideales para aprovechar el mango.</p>
+      </div>
+    </div>
+
+    <div class="detector-cta fade-up">
+      <a href="scanner.html" class="btn btn--primary btn--lg">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 7a2 2 0 0 1 2-2h2l1-2h6l1 2h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        Escanear Mango
+      </a>
+      <span class="detector-cta__hint">Se abrirá el laboratorio de análisis — podrás volver a esta página en cualquier momento.</span>
+    </div>
+  </section>
+
+  <!-- ============ 3. RESULTADOS ============ -->
+  <section class="section section--alt" id="resultados">
+    <div class="section__head fade-up">
+      <p class="eyebrow">03 · Datos del experimento</p>
+      <h2>Resultados</h2>
+      <p class="section__lead">Muestras evaluadas durante la fase de pruebas del clasificador, comparadas contra la observación visual de los integrantes del proyecto.</p>
+    </div>
+
+    <div class="charts-grid fade-up">
+      <div class="card chart-card">
+        <h3>Distribución de muestras por estado</h3>
+        <canvas id="chartDistribucion" height="220"></canvas>
+      </div>
+      <div class="card chart-card">
+        <h3>Precisión del modelo por clase (%)</h3>
+        <canvas id="chartPrecision" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="card table-card fade-up">
+      <h3>Tabla de observaciones</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Muestra</th>
+              <th>Estado observado</th>
+              <th>Predicción IA</th>
+              <th>Confianza</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Mango #01</td><td>Verde</td><td>Verde</td><td>96%</td><td><span class="tag tag--ok">Correcto</span></td></tr>
+            <tr><td>Mango #02</td><td>Maduro</td><td>Maduro</td><td>89%</td><td><span class="tag tag--ok">Correcto</span></td></tr>
+            <tr><td>Mango #03</td><td>Sobremaduro</td><td>Sobremaduro</td><td>92%</td><td><span class="tag tag--ok">Correcto</span></td></tr>
+            <tr><td>Mango #04</td><td>Maduro</td><td>Sobremaduro</td><td>61%</td><td><span class="tag tag--warn">Revisar</span></td></tr>
+            <tr><td>Mango #05</td><td>Malo</td><td>Malo</td><td>98%</td><td><span class="tag tag--ok">Correcto</span></td></tr>
+            <tr><td>Mango #06</td><td>Verde</td><td>Verde</td><td>94%</td><td><span class="tag tag--ok">Correcto</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-note">* Tabla de ejemplo — sustitúyanla por los datos reales registrados en su bitácora de laboratorio.</p>
+    </div>
+
+    <div class="treatments fade-up">
+      <h3>Comparación de tratamientos de maduración</h3>
+      <div class="treatments-grid">
+        <div class="card treatment-card">
+          <span class="treatment-card__chip" style="background:#4CAF50">Natural</span>
+          <h4>Maduración al ambiente</h4>
+          <p>El mango maduró de forma natural a temperatura ambiente, sin intervención.</p>
+          <ul>
+            <li>Tiempo promedio: <strong>5–7 días</strong></li>
+            <li>Uniformidad del color: <strong>Media</strong></li>
+            <li>Riesgo de deterioro: <strong>Bajo</strong></li>
+          </ul>
+        </div>
+        <div class="card treatment-card">
+          <span class="treatment-card__chip" style="background:#FFC727">Bolsa de papel</span>
+          <h4>Maduración en bolsa cerrada</h4>
+          <p>El etileno liberado por el fruto se concentra dentro de la bolsa, acelerando el proceso.</p>
+          <ul>
+            <li>Tiempo promedio: <strong>3–4 días</strong></li>
+            <li>Uniformidad del color: <strong>Alta</strong></li>
+            <li>Riesgo de deterioro: <strong>Medio</strong></li>
+          </ul>
+        </div>
+        <div class="card treatment-card">
+          <span class="treatment-card__chip" style="background:#3B82F6">Refrigeración</span>
+          <h4>Almacenamiento en frío</h4>
+          <p>La baja temperatura ralentiza la maduración, conservando el mango verde por más tiempo.</p>
+          <ul>
+            <li>Tiempo promedio: <strong>10–14 días</strong></li>
+            <li>Uniformidad del color: <strong>Baja</strong></li>
+            <li>Riesgo de deterioro: <strong>Bajo</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. GALERÍA ============ -->
+  <section class="section" id="galeria">
+    <div class="section__head fade-up">
+      <p class="eyebrow">04 · Bitácora visual</p>
+      <h2>Galería del experimento</h2>
+      <p class="section__lead">Espacio reservado para las fotografías del proceso. Sustituyan cada marcador por una imagen real (ver comentario en el HTML).</p>
+    </div>
+
+    <div class="gallery-grid fade-up">
+      <!-- 
+        Para usar una fotografía real, reemplacen cada <div class="gallery-item placeholder">...</div>
+        por: <div class="gallery-item"><img src="fotos/su-foto.jpg" alt="Descripción"></div>
+      -->
+      <figure class="gallery-item placeholder"><span>🥭</span><p>Mango verde</p></figure>
+      <figure class="gallery-item placeholder"><span>🥭</span><p>Mango maduro</p></figure>
+      <figure class="gallery-item placeholder"><span>🥭</span><p>Mango sobremaduro</p></figure>
+      <figure class="gallery-item placeholder"><span>🔬</span><p>Captura de datos</p></figure>
+      <figure class="gallery-item placeholder"><span>💻</span><p>Entrenamiento del modelo</p></figure>
+      <figure class="gallery-item placeholder"><span>👩‍🔬</span><p>Equipo de trabajo</p></figure>
+    </div>
+  </section>
+
+  <!-- ============ 5. CRÉDITOS ============ -->
+  <section class="section section--alt" id="creditos">
+    <div class="section__head fade-up">
+      <p class="eyebrow">05 · Equipo</p>
+      <h2>Créditos</h2>
+    </div>
+
+    <div class="credits-grid fade-up">
+      <div class="card credit-card">
+        <h3>Integrantes</h3>
+        <ul class="credit-list">
+          <li>Ethana la caca</li>
+          <li>Adrian Soto Cañas </li>
+          <li>Mariana Sanchez</li>
+        </ul>
+      </div>
+      <div class="card credit-card">
+        <h3>Institución</h3>
+        <p class="credit-big">Nombre del Colegio</p>
+        <p>Feria Científica Estudiantil</p>
+      </div>
+      <div class="card credit-card">
+        <h3>Año</h3>
+        <p class="credit-big" id="creditYear">2026</p>
+        <p>Proyecto de Ciencias Aplicadas e Inteligencia Artificial</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div>
+        <p class="footer__brand">Mango<strong>IA</strong></p>
+        <p class="footer__tag">Clasificación Inteligente de la Maduración de los Mangos</p>
+      </div>
+      <nav class="footer__links">
+        <a href="#inicio">Inicio</a>
+        <a href="#detector">Detector IA</a>
+        <a href="#resultados">Resultados</a>
+        <a href="#galeria">Galería</a>
+        <a href="#creditos">Créditos</a>
+      </nav>
+      <p class="footer__copy">© <span id="footerYear">2026</span> Proyecto de Feria Científica. Modelo de clasificación construido con TensorFlow.js y Google Teachable Machine.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

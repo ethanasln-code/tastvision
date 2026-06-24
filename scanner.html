@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detector IA · Clasificación de Maduración de Mangos</title>
+  <meta name="description" content="Escanea un mango con tu cámara o sube una foto para clasificar su estado de maduración con inteligencia artificial." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- TensorFlow.js + Teachable Machine (Image) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="scanner-body">
+
+  <!-- ============ BARRA SUPERIOR DEL ESCÁNER ============ -->
+  <header class="scanner-bar">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Volver al inicio
+    </a>
+    <p class="scanner-bar__title">MangoIA · Laboratorio de Análisis</p>
+    <button id="themeToggle2" class="icon-btn" title="Cambiar tema" aria-label="Cambiar tema">
+      <svg id="iconSun2" viewBox="0 0 24 24" width="20" height="20"><path d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5 5 3.6 3.6M18.4 18.4 19.8 19.8M5 19l-1.4 1.4M18.4 5.6 19.8 4.2M12 8a4 4 0 100 8 4 4 0 000-8Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+      <svg id="iconMoon2" viewBox="0 0 24 24" width="20" height="20" style="display:none"><path d="M21 12.8A9 9 0 1111.2 3 7.2 7.2 0 0021 12.8Z" fill="currentColor"/></svg>
+    </button>
+  </header>
+
+  <main class="scanner-main">
+    <div class="scanner-head fade-up">
+      <p class="eyebrow">Detector con IA</p>
+      <h1>Escanea tu mango</h1>
+      <p class="section__lead">Activa la cámara o sube una fotografía. El modelo —entrenado en Google Teachable Machine y ejecutado con TensorFlow.js— calculará el estado de maduración, el sabor esperado y te sugerirá recetas.</p>
+    </div>
+
+    <div class="scanner-grid">
+
+      <!-- =================== PANEL DE ENTRADA =================== -->
+      <div class="card scanner-panel fade-up">
+        <div class="mode-switch" role="tablist">
+          <button class="mode-switch__btn is-active" id="btnModeCamera" role="tab" aria-selected="true">📷 Cámara</button>
+          <button class="mode-switch__btn" id="btnModeUpload" role="tab" aria-selected="false">🖼️ Subir imagen</button>
+        </div>
+
+        <!-- Vista de cámara -->
+        <div id="cameraView" class="media-frame">
+          <div id="webcamContainer" class="webcam-container"></div>
+          <p class="media-frame__placeholder" id="cameraPlaceholder">
+            Pulsa “Activar cámara” para comenzar el análisis en tiempo real.
+          </p>
+        </div>
+
+        <!-- Vista de imagen subida -->
+        <div id="uploadView" class="media-frame" style="display:none">
+          <img id="uploadedPreview" alt="Imagen del mango cargada" style="display:none" />
+          <label for="fileInput" class="upload-drop" id="uploadDrop">
+            <svg viewBox="0 0 24 24" width="34" height="34"><path d="M12 16V4M12 4 7 9M12 4l5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Arrastra una foto aquí o haz clic para subirla</span>
+            <small>JPG o PNG · idealmente con buena luz y fondo simple</small>
+          </label>
+          <input type="file" id="fileInput" accept="image/*" hidden />
+        </div>
+
+        <div class="scanner-controls">
+          <button class="btn btn--primary" id="btnStartCamera">Activar cámara</button>
+          <button class="btn btn--ghost" id="btnStopCamera" disabled>Detener cámara</button>
+          <button class="btn btn--secondary" id="btnAnalyzeUpload" style="display:none" disabled>Analizar imagen</button>
+        </div>
+
+        <p class="live-indicator" id="liveIndicator" style="display:none">
+          <span class="dot"></span> Analizando en tiempo real…
+        </p>
+      </div>
+
+      <!-- =================== PANEL DE RESULTADOS =================== -->
+      <div class="card scanner-panel fade-up" style="animation-delay:.1s">
+        <h3 class="results-title">Resultado del análisis</h3>
+
+        <div class="result-empty" id="resultEmpty">
+          <span>🥭</span>
+          <p>Aún no hay imagen analizada. Activa la cámara o sube una foto para comenzar.</p>
+        </div>
+
+        <div id="resultContent" style="display:none">
+          <div class="result-main">
+            <div class="result-main__label">
+              <span class="result-main__name" id="resultLabel">—</span>
+              <span class="result-main__confidence" id="resultConfidence">0%</span>
+            </div>
+            <p class="result-main__taste" id="resultTaste">Esperando análisis…</p>
+          </div>
+
+          <!-- Barras de probabilidad por clase -->
+          <div class="prob-bars" id="probBars"><!-- generado por JS --></div>
+
+          <!-- Medidor de maduración (verde → maduro → sobremaduro → malo) -->
+          <div class="ripeness-meter">
+            <h4>Escala de maduración</h4>
+            <div class="ripeness-track">
+              <div class="ripeness-track__fill" id="ripenessFill"></div>
+              <div class="ripeness-track__marker" id="ripenessMarker"></div>
+            </div>
+            <div class="ripeness-labels">
+              <span>Verde</span><span>Maduro</span><span>Sobremaduro</span><span>Malo</span>
+            </div>
+          </div>
+
+          <!-- Recetas sugeridas -->
+          <div class="recipes" id="recipesBox">
+            <h4>Recetas sugeridas</h4>
+            <ul class="recipes__list" id="recipesList"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="model-note">
+      Modelo cargado desde Google Teachable Machine ·
+      <code>https://teachablemachine.withgoogle.com/models/VbCLkP5Uh/</code>
+    </p>
+  </main>
+
+  <footer class="footer footer--scanner">
+    <div class="footer__inner">
+      <p class="footer__copy">© <span id="footerYear2">2026</span> Proyecto de Feria Científica · Clasificación Inteligente de la Maduración de los Mangos.</p>
+      <a href="index.html" class="back-link back-link--footer">← Volver al inicio</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
