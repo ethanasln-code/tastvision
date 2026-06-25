@@ -47,11 +47,24 @@
           <button class="mode-switch__btn" id="btnModeUpload" role="tab" aria-selected="false">🖼️ Subir imagen</button>
         </div>
 
+        <!-- Selector de dispositivo de cámara: permite elegir una webcam externa
+             en vez de la cámara por defecto del equipo. Se llena automáticamente
+             con los dispositivos de video detectados por el navegador. -->
+        <div class="camera-select-bar" id="cameraSelectBar">
+          <label for="cameraSelect">Cámara a utilizar:</label>
+          <select id="cameraSelect">
+            <option value="">Detectando cámaras…</option>
+          </select>
+          <button type="button" id="btnRefreshCameras" class="icon-btn" title="Volver a detectar cámaras" aria-label="Volver a detectar cámaras">
+            <svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 4v6h6M20 20v-6h-6M5.5 9A7.5 7.5 0 0 1 19 8.5M18.5 15A7.5 7.5 0 0 1 5 15.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
         <!-- Vista de cámara -->
         <div id="cameraView" class="media-frame">
           <div id="webcamContainer" class="webcam-container"></div>
           <p class="media-frame__placeholder" id="cameraPlaceholder">
-            Pulsa “Activar cámara” para comenzar el análisis en tiempo real.
+            Selecciona tu webcam arriba y pulsa “Activar cámara” para comenzar el análisis en tiempo real.
           </p>
         </div>
 
