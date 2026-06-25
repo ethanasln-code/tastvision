@@ -261,6 +261,9 @@
   const fileInput       = document.getElementById("fileInput");
   const uploadDrop      = document.getElementById("uploadDrop");
   const uploadedPreview = document.getElementById("uploadedPreview");
+  const cameraSelectBar = document.getElementById("cameraSelectBar");
+  const cameraSelect    = document.getElementById("cameraSelect");
+  const btnRefreshCameras = document.getElementById("btnRefreshCameras");
 
   const resultEmpty     = document.getElementById("resultEmpty");
   const resultContent   = document.getElementById("resultContent");
@@ -294,6 +297,7 @@
     btnModeUpload.setAttribute("aria-selected", "false");
     cameraView.style.display = "flex";
     uploadView.style.display = "none";
+    cameraSelectBar.style.display = "flex";
     btnStartCamera.style.display = "inline-flex";
     btnStopCamera.style.display = "inline-flex";
     btnAnalyzeUpload.style.display = "none";
@@ -307,6 +311,7 @@
     btnModeCamera.setAttribute("aria-selected", "false");
     cameraView.style.display = "none";
     uploadView.style.display = "flex";
+    cameraSelectBar.style.display = "none";
     btnStartCamera.style.display = "none";
     btnStopCamera.style.display = "none";
     btnAnalyzeUpload.style.display = "inline-flex";
@@ -314,6 +319,62 @@
 
   btnModeCamera.addEventListener("click", activarModoCamara);
   btnModeUpload.addEventListener("click", activarModoSubida);
+
+  // -------------------------------------------------------------
+  // 6.3.1 DETECCIÓN DE CÁMARAS DISPONIBLES (webcam externa, etc.)
+  //
+  // Los navegadores solo muestran el NOMBRE de cada cámara después de que
+  // el usuario haya dado permiso de video al menos una vez. Por eso, si
+  // aún no hay permiso, mostramos "Cámara 1", "Cámara 2"... y, en cuanto
+  // se activa la cámara por primera vez, volvemos a detectar para mostrar
+  // ya los nombres reales (ej. "Logitech HD Webcam C310").
+  // -------------------------------------------------------------
+  async function enumerarCamaras(){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices){
+      cameraSelect.innerHTML = `<option value="">No disponible en este navegador</option>`;
+      cameraSelect.disabled = true;
+      return;
+    }
+    try{
+      const dispositivos = await navigator.mediaDevices.enumerateDevices();
+      const camaras = dispositivos.filter(d => d.kind === "videoinput");
+
+      if (!camaras.length){
+        cameraSelect.innerHTML = `<option value="">No se detectó ninguna cámara</option>`;
+        cameraSelect.disabled = true;
+        return;
+      }
+
+      const seleccionPrevia = cameraSelect.value;
+      cameraSelect.innerHTML = "";
+      camaras.forEach((cam, i) => {
+        const opt = document.createElement("option");
+        opt.value = cam.deviceId;
+        opt.textContent = cam.label && cam.label.trim() ? cam.label : `Cámara ${i + 1}`;
+        cameraSelect.appendChild(opt);
+      });
+      cameraSelect.disabled = false;
+
+      // Si la cámara elegida antes sigue disponible, la mantenemos seleccionada
+      if (seleccionPrevia && camaras.some(c => c.deviceId === seleccionPrevia)){
+        cameraSelect.value = seleccionPrevia;
+      }
+    } catch(err){
+      console.error("No se pudieron enumerar las cámaras:", err);
+      cameraSelect.innerHTML = `<option value="">Error al detectar cámaras</option>`;
+    }
+  }
+
+  btnRefreshCameras.addEventListener("click", enumerarCamaras);
+
+  // Si el usuario conecta o desconecta una webcam (p. ej. la USB), actualizamos la lista
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener){
+    navigator.mediaDevices.addEventListener("devicechange", enumerarCamaras);
+  }
+
+  // Primer intento de detección al cargar la página (puede mostrar nombres
+  // genéricos hasta que se otorgue el permiso de cámara)
+  enumerarCamaras();
 
   // -------------------------------------------------------------
   // 6.4 CÁMARA WEB EN VIVO
@@ -326,7 +387,17 @@
 
       const flip = true; // efecto espejo, más natural para el usuario
       webcam = new tmImage.Webcam(320, 320, flip);
-      await webcam.setup(); // pide permiso de cámara
+
+      const deviceIdSeleccionado = cameraSelect.value || undefined;
+
+      try{
+        // Intentamos abrir exactamente la cámara elegida por el usuario (su webcam)
+        await webcam.setup(deviceIdSeleccionado ? { deviceId: deviceIdSeleccionado } : {});
+      } catch (errDispositivo){
+        console.warn("No se pudo abrir la cámara seleccionada, se usará la predeterminada:", errDispositivo);
+        await webcam.setup(); // respaldo: cámara predeterminada del sistema
+      }
+
       await webcam.play();
       isWebcamRunning = true;
 
@@ -336,12 +407,17 @@
 
       btnStartCamera.style.display = "none";
       btnStopCamera.disabled = false;
+      cameraSelect.disabled = true; // evita cambiar de cámara mientras está activa
       liveIndicator.style.display = "flex";
+
+      // Ahora que ya hay permiso concedido, refrescamos la lista para mostrar
+      // los nombres reales de las cámaras (antes podían verse como "Cámara 1", etc.)
+      enumerarCamaras();
 
       window.requestAnimationFrame(loopCamara);
     } catch (err){
       console.error("Error al iniciar la cámara:", err);
-      alert("No se pudo activar la cámara. Verifique los permisos del navegador o utilice la opción de subir una imagen.");
+      alert("No se pudo activar la cámara. Verifique los permisos del navegador, que la webcam esté bien conectada, o utilice la opción de subir una imagen.");
       btnStartCamera.disabled = false;
       btnStartCamera.textContent = "Activar cámara";
     }
@@ -369,6 +445,7 @@
     btnStartCamera.disabled = false;
     btnStartCamera.textContent = "Activar cámara";
     btnStopCamera.disabled = true;
+    cameraSelect.disabled = false; // vuelve a permitir elegir otra cámara
     webcamContainer.innerHTML = "";
     cameraPlaceholder.style.display = "block";
   }
