@@ -14,6 +14,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
 
+  <!-- Generador de códigos QR para las recetas -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="scanner-body">
@@ -138,6 +141,16 @@
     </p>
   </main>
 
+  <!-- =================== MODAL: RECETA COMPLETA =================== -->
+  <div class="recipe-modal-overlay" id="recipeModalOverlay" aria-hidden="true">
+    <div class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="recipeModalTitle">
+      <button class="recipe-modal__close" id="recipeModalClose" aria-label="Cerrar receta">✕</button>
+      <div class="recipe-modal__body" id="recipeModalBody">
+        <!-- Contenido generado dinámicamente por script.js (renderRecipeDetailHTML) -->
+      </div>
+    </div>
+  </div>
+
   <footer class="footer footer--scanner">
     <div class="footer__inner">
       <p class="footer__copy">© <span id="footerYear2">2026</span> Proyecto de Feria Científica · Clasificación Inteligente de la Maduración de los Mangos.</p>
@@ -145,6 +158,8 @@
     </div>
   </footer>
 
+  <script src="recetas-data.js"></script>
+  <script src="recipe-render.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
