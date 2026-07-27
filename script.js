@@ -147,8 +147,14 @@
   // clave listadas en "match" (sin importar mayúsculas/tildes).
   // Si en su proyecto de Teachable Machine las clases se llaman
   // exactamente "Verde", "Maduro", "Sobremaduro" y "Malo", no necesitan
-  // cambiar nada. Las RECETAS de ejemplo deben sustituirse por las
-  // recetas reales que el equipo proporcione.
+  // cambiar nada.
+  //
+  // "recetaIds" hace referencia a las llaves definidas en el archivo
+  // recetas-data.js (window.RECETAS_DB). Cada id ahí tiene la receta
+  // COMPLETA: imagen, descripción, tiempo, porciones, dificultad,
+  // ingredientes con cantidades, utensilios y procedimiento paso a paso.
+  // Para añadir una receta nueva: agréguenla en recetas-data.js y luego
+  // sumen su id al arreglo "recetaIds" correspondiente aquí abajo.
   // -------------------------------------------------------------
   const RIPENESS_INFO = {
     verde: {
@@ -158,11 +164,7 @@
       mensaje: "Sabor ácido y firme — típico del mango sin madurar.",
       nivel: 0,
       color: "#4CAF50",
-      recetas: [
-        "Ceviche de mango verde con cebolla morada y limón",
-        "Ensalada thai de mango verde rallado",
-        "Mango verde encurtido con sal y chile"
-      ]
+      recetaIds: ["v1", "v2", "v3"]
     },
     maduro: {
       match: ["maduro"],
@@ -171,11 +173,7 @@
       mensaje: "Equilibrio entre dulzor y acidez — ideal para comer al natural.",
       nivel: 33,
       color: "#FFC727",
-      recetas: [
-        "Ensalada de mango maduro con queso fresco",
-        "Smoothie de mango y yogur natural",
-        "Mango maduro con chile en polvo y limón"
-      ]
+      recetaIds: ["m1", "m2", "m3"]
     },
     sobremaduro: {
       match: ["sobremaduro", "sobre maduro", "sobre-maduro"],
@@ -184,11 +182,7 @@
       mensaje: "Pulpa muy dulce y suave — perfecto para preparaciones dulces.",
       nivel: 66,
       color: "#FF8A3D",
-      recetas: [
-        "Batido dulce de mango sobremaduro",
-        "Mermelada artesanal de mango",
-        "Helado casero de mango"
-      ]
+      recetaIds: ["s1", "s2", "s3"]
     },
     malo: {
       match: ["malo", "daño", "dañado", "podrido", "mal estado"],
@@ -197,10 +191,8 @@
       mensaje: "El mango presenta signos de deterioro. No se recomienda su consumo.",
       nivel: 100,
       color: "#7A4B32",
-      recetas: [
-        "No se recomienda preparar recetas con este mango.",
-        "Sugerencia: descártelo de forma segura o utilícelo como abono orgánico (compostaje)."
-      ]
+      recetaIds: [],
+      mensajeRecetas: "No se recomienda preparar recetas con este mango. Sugerencia: descártelo de forma segura o utilícelo como abono orgánico (compostaje)."
     },
     sin_deteccion: {
       // Clase de "fondo" que Teachable Machine entrena automáticamente cuando
@@ -213,7 +205,8 @@
       mensaje: "No se detecta un mango frente a la cámara. Acércalo, mejora la iluminación o centra el fruto en el cuadro.",
       nivel: null, // null = no participa en el cálculo del medidor de maduración
       color: "#9aa39a",
-      recetas: []
+      recetaIds: [],
+      mensajeRecetas: "Coloca un mango frente a la cámara para ver sugerencias de recetas."
     },
     desconocido: {
       match: [],
@@ -222,7 +215,8 @@
       mensaje: "Esta clase del modelo no coincide con ninguna categoría configurada. Revise la configuración en script.js (RIPENESS_INFO).",
       nivel: null,
       color: "#9aa39a",
-      recetas: []
+      recetaIds: [],
+      mensajeRecetas: "Coloca un mango frente a la cámara para ver sugerencias de recetas."
     }
   };
 
@@ -272,6 +266,11 @@
   const resultTaste     = document.getElementById("resultTaste");
   const ripenessMarker  = document.getElementById("ripenessMarker");
   const recipesList     = document.getElementById("recipesList");
+
+  // ---- Referencias del modal "Ver receta completa" ----
+  const recipeModalOverlay = document.getElementById("recipeModalOverlay");
+  const recipeModalBody    = document.getElementById("recipeModalBody");
+  const recipeModalClose   = document.getElementById("recipeModalClose");
 
   let currentUploadedImage = null;
 
@@ -601,20 +600,79 @@
     ripenessMarker.style.left = `calc(${posicion}% - 2px)`;
   }
 
+  // -------------------------------------------------------------
+  // 6.7 RECETAS SUGERIDAS + MODAL "VER RECETA COMPLETA" + CÓDIGO QR
+  //
+  // Cada receta sugerida se pinta como una tarjeta con su nombre y un
+  // botón "Ver receta completa". Al hacer clic, se abre el modal con
+  // toda la información (imagen, descripción, tiempo, porciones,
+  // dificultad, ingredientes, utensilios, procedimiento) y su código
+  // QR único, generado con renderRecipeDetailHTML() / generarQRparaReceta()
+  // definidas en recipe-render.js (compartidas con receta.html).
+  // -------------------------------------------------------------
   function renderRecetas(infoTop){
     recipesList.innerHTML = "";
-    if (!infoTop.recetas.length){
+    const ids = infoTop.recetaIds || [];
+
+    if (!ids.length){
       const li = document.createElement("li");
-      li.textContent = "Coloca un mango frente a la cámara para ver sugerencias de recetas.";
+      li.textContent = infoTop.mensajeRecetas || "Coloca un mango frente a la cámara para ver sugerencias de recetas.";
       recipesList.appendChild(li);
       return;
     }
-    infoTop.recetas.forEach(receta => {
+
+    ids.forEach(id => {
+      const receta = window.RECETAS_DB && window.RECETAS_DB[id];
+      if (!receta) return;
+
       const li = document.createElement("li");
-      li.textContent = receta;
+      li.className = "recipe-item";
+      li.innerHTML = `
+        <div class="recipe-item__info">
+          <span class="recipe-item__emoji">${receta.emoji}</span>
+          <span class="recipe-item__nombre">${receta.titulo}</span>
+        </div>
+        <button type="button" class="btn btn--secondary btn--sm recipe-item__btn" data-recipe-id="${id}">
+          Ver receta completa
+        </button>
+      `;
       recipesList.appendChild(li);
     });
   }
+
+  function abrirModalReceta(id){
+    const receta = window.RECETAS_DB && window.RECETAS_DB[id];
+    if (!receta || typeof renderRecipeDetailHTML !== "function") return;
+
+    recipeModalBody.innerHTML = renderRecipeDetailHTML(receta);
+    generarQRparaReceta(receta);
+
+    recipeModalOverlay.classList.add("is-open");
+    recipeModalOverlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+  }
+
+  function cerrarModalReceta(){
+    recipeModalOverlay.classList.remove("is-open");
+    recipeModalOverlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+  }
+
+  // Delegación de eventos: los botones "Ver receta completa" se crean
+  // dinámicamente, así que escuchamos los clics desde su contenedor padre.
+  recipesList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".recipe-item__btn");
+    if (!btn) return;
+    abrirModalReceta(btn.dataset.recipeId);
+  });
+
+  recipeModalClose.addEventListener("click", cerrarModalReceta);
+  recipeModalOverlay.addEventListener("click", (e) => {
+    if (e.target === recipeModalOverlay) cerrarModalReceta(); // clic fuera de la tarjeta
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && recipeModalOverlay.classList.contains("is-open")) cerrarModalReceta();
+  });
 
   // Modo inicial al cargar la página
   activarModoCamara();
